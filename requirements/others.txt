@@ -1,0 +1,11 @@
+# Tensorboard
+tensorboard
+
+# Jypyter
+jupyterlab
+
+# Utils
+easydict
+tqdm
+seaborn
+torchmetrics

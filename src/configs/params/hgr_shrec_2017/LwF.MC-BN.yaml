@@ -1,0 +1,94 @@
+in_channels: &in_channels 3
+seq_len: &seq_len 8
+rm_global_scale: &rm_global_scale On
+batch_size: 32
+workers: 4
+total_epochs: 150 
+total_epochs_incremental_task: 100 
+step_per_epoch: &step_per_epoch On
+step_per_batch: &step_per_batch Off
+log_freq:
+    train: 20
+    val: null
+
+model:
+    name: 'dg_sta_BN'
+    in_channels: *in_channels
+    n_heads: 8 # number of attention heads
+    d_head: 32 # dimension of attention heads
+    d_feat: 128 # feature dimension
+    seq_len: *seq_len # sequence length
+    n_joints: 22 # number of joints
+    dropout: 0.5
+
+
+transforms:
+    train:
+        random_time_interpolation:
+            prob: 0.5
+
+        stratified_sample:
+            n_samples: *seq_len
+
+        random_scale:
+            lim: [0.1, 5.0] #[0.8, 1.2]
+
+        random_translation:
+            x: 0.1
+            y: 0.1
+            z: 0.1
+
+        random_rotation: # degrees
+            x: 5.0
+            y: 5.0
+            z: 5.0
+
+        center_by_index:
+            ind: 1 # palm index
+            
+
+    val: &transforms_inference
+        stratified_sample:
+            n_samples: *seq_len
+
+        center_by_index:
+            ind: 1 # palm index                
+    testval: *transforms_inference  
+    testtrain: *transforms_inference 
+    test: *transforms_inference
+
+
+loss:
+    bce: 
+        weight: 1.0
+        reduction: 'sum'
+
+
+optimizer:
+    name: 'adam'
+    lr: &lr 0.001
+    lr_incremental_task: 0.00075
+    betas: [0.9, 0.999]
+    include_scheduler: False
+    scheduler:
+        name: 'linear'
+        lr: *lr
+        start_factor: 1
+        end_factor: 0.001
+        step_per_batch: *step_per_batch
+        step_per_epoch: *step_per_epoch      
+          
+
+increm:
+    load_pretrained_task0: True
+    first_split_size: 8
+    other_split_size: 1
+    max_task: 7
+    load_best_checkpoint_train: True  # Only for task_id == 1
+    load_best_checkpoint_test: True # Only for task_id == 1
+    freeze_feature_extractor: False
+    freeze_classifier: False
+    memory: 0
+    learner:
+        type: 'lwf_MC'
+

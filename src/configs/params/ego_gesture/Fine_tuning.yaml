@@ -1,0 +1,73 @@
+in_channels: &in_channels 3
+seq_len: &seq_len 8
+rm_global_scale: &rm_global_scale On
+batch_size: 32
+workers: 4
+total_epochs: 150 
+total_epochs_incremental_task: 100
+step_per_epoch: &step_per_epoch On
+step_per_batch: &step_per_batch Off
+log_freq:
+    train: 20
+    val: null
+
+model:
+    name: 'dg_sta'
+    in_channels: *in_channels
+    n_heads: 8 # number of attention heads
+    d_head: 32 # dimension of attention heads
+    d_feat: 128 # feature dimension
+    seq_len: *seq_len # sequence length
+    n_joints: 42 # number of joints
+    dropout: 0.2
+
+
+transforms:
+    train:
+        stratified_sample:
+            n_samples: *seq_len
+               
+    val: &transforms_inference
+        stratified_sample:
+            n_samples: *seq_len
+            
+    testval: *transforms_inference  
+    testtrain: *transforms_inference 
+    test: *transforms_inference  
+
+
+loss:
+    cross_entropy: 
+        weight: 1.0
+        ignore: null
+        class_weight: null
+
+
+optimizer:
+    name: 'adam'
+    lr: &lr 0.001
+    lr_incremental_task: 0.0000125
+    betas: [0.9, 0.999]
+    include_scheduler: False
+    scheduler:
+        name: 'linear'
+        lr: *lr
+        start_factor: 1
+        end_factor: 0.001
+        step_per_batch: *step_per_batch
+        step_per_epoch: *step_per_epoch      
+          
+
+increm:
+    load_pretrained_task0: True
+    first_split_size: 59
+    other_split_size: 4
+    max_task: 7
+    load_best_checkpoint_train: True  # Only for task_id == 1
+    load_best_checkpoint_test: True # Only for task_id == 1
+    freeze_feature_extractor: False
+    freeze_classifier: True
+    memory: 0
+    learner:
+        type: 'base'
+
