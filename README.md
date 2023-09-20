@@ -74,6 +74,7 @@ n_tasks=1
 
 ```
 
+ <!-- 
 ## License
 
   
@@ -84,14 +85,9 @@ n_tasks=1
   
 
 If you use find this paper/code useful, please consider citing:
-
-  
-
 ```
-
-  
-
 ```
+-->
 
 ## Acknowledgments
 
