@@ -1,0 +1,131 @@
+n_views: &n_views 2
+in_channels: &in_channels 3
+seq_len: &seq_len 8
+rm_global_scale:
+    mi: Off
+    new: On
+batch_size: 
+    mi: 32 # 32
+    new: 8 # 8
+workers: 4
+total_epochs: 100
+frac_warmup_epochs: 1.0 # fraction of epochs to warmup
+step_per_epoch: &step_per_epoch On
+step_per_batch: &step_per_batch Off
+log_freq:
+    train: 20
+    val: null
+
+mi_params:
+    lr:
+        forward: 0.05
+        backward: 1.0
+    momentum: 0.9
+    tol:
+        sv: 0.001
+        proto: 0.01
+    tol_ub:
+        sv: 0.01
+        proto: 0.2
+    max_iter:
+        forward: 100
+        backward:
+            sv: 2000
+            proto: 2000
+    order: 4
+    var_exp: 0.99 # 0.95
+
+
+model:
+    name: 'dg_sta_contrastive'
+    in_channels: *in_channels
+    n_heads: 8 # number of attention heads
+    d_head: 32 # dimension of attention heads
+    d_feat: 128 # feature dimension
+    seq_len: *seq_len # sequence length
+    n_joints: 22 # number of joints
+    dropout: 0.5
+    d_head_contrastive: 32
+
+
+transforms:
+    mi: 
+        train:
+            stratified_sample:
+                n_samples: *seq_len              
+
+        val: &transforms_inference_mi
+            stratified_sample:
+                n_samples: *seq_len
+          
+        testval: *transforms_inference_mi  
+        testtrain: *transforms_inference_mi 
+        test: *transforms_inference_mi    
+
+    new:
+        train:
+            # random_time_interpolation:
+            #     prob: 0.5
+
+            stratified_sample:
+                n_samples: *seq_len
+
+            # random_scale:
+            #     lim: [0.8, 1.2]
+
+            # random_translation:
+            #     x: 0.1
+            #     y: 0.1
+            #     z: 0.1
+
+            # random_rotation: # degrees
+            #     x: 5.0
+            #     y: 5.0
+            #     z: 5.0
+
+            center_by_index:
+                ind: 1 # palm index
+                
+        val: &transforms_inference
+            stratified_sample:
+                n_samples: *seq_len
+
+            center_by_index:
+                ind: 1 # palm index                
+        testval: *transforms_inference  
+        testtrain: *transforms_inference 
+        test: *transforms_inference    
+
+
+loss:
+    mi:
+        contrastive: 
+            weight: 1.0 # 0.9 - 85.8; 1.0/0.1 - 86.2
+            n_views: *n_views
+            is_supervised: On
+            temperature: 0.07
+        
+        snapshot: 
+            weight: 0.0 # 0.5 - 71.8; 0.4 - 74.3; 0.3 - 76.1; 0.2 - 77.4; 0.1 - 78.2; 0.0 - 78.4
+            type: 'l1'
+
+    new:
+        contrastive: 
+            weight: 0.1
+            n_views: *n_views
+            is_supervised: On
+            temperature: 0.07
+
+
+
+optimizer:
+    name: 'adam'
+    lr: &lr 0.00001
+    betas: [0.9, 0.999]
+    # scheduler:
+    #     name: 'linear'
+    #     lr: *lr
+    #     start_factor: 1
+    #     end_factor: 1
+    #     step_per_batch: *step_per_batch
+    #     step_per_epoch: *step_per_epoch
