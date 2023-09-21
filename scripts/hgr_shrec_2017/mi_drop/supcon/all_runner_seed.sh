@@ -32,7 +32,7 @@ args=(
     ${n_tasks}
 )
 
-# ./base_build.sh ${args[@]}
-# ./base_runner.sh ${args[@]}
+./base_build.sh ${args[@]}
+./base_runner.sh ${args[@]}
 ./mi_runner.sh ${args[@]}
 
